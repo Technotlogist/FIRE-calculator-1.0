@@ -1,0 +1,12 @@
+# Ignore macOS
+.DS_Store
+
+# Ignore node_modules (if you ever add a build step)
+node_modules/
+
+# Ignore log files
+*.log
+
+# Ignore dotenv files
+.env
+.env.*
