@@ -1,0 +1,56 @@
+# .github/workflows/deploy-function.yml
+name: Deploy Cloud Function (FIRE Plan Generator)
+
+on:
+  push:
+    branches:
+      - main  # Trigger deployment on push to the main branch
+    paths:
+      - 'cloud-function/**' # Only run if files in the function folder change
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      # Step 1: Checks out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Authenticate to Google Cloud
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      # Step 3: Deploy the Cloud Function
+      - name: Deploy to Cloud Function
+        uses: 'google-github-actions/deploy-cloud-functions@v2'
+        with:
+          name: generateAndSendFirePlan
+          runtime: nodejs20
+          region: us-central1 # <<-- IMPORTANT: Change this to your chosen GCP region!
+          entry_point: generateAndSendEmail
+          project_id: ${{ secrets.GCP_PROJECT_ID }} # <<-- IMPORTANT: This uses your secret
+          source_dir: 'cloud-function' 
+          trigger_http: true
+          allow_unauthenticated: true
+          env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} # <<-- This securely passes the key!
+
+      # Step 4: Output the Function URL
+      - name: Get function URL
+        id: get_url
+        run: |
+          gcloud functions describe generateAndSendFirePlan \
+            --region us-central1 \
+            --format='value(url)' > function_url.txt
+          echo "FUNCTION_URL=$(cat function_url.txt)" >> $GITHUB_OUTPUT
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Display Function URL
+        run: echo "Deployment Successful! Function URL is: ${{ steps.get_url.outputs.FUNCTION_URL }}"
