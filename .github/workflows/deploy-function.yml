@@ -32,8 +32,8 @@ jobs:
       - name: Deploy to Cloud Function
         uses: 'google-github-actions/deploy-cloud-functions@v2'
         with:
-          name: 494683889335
-          name: generateAndSendFirePlan
+          name: generateAndSendFirePlan # <-- CORRECT FUNCTION NAME
+          runtime: nodejs20
           region: us-central1 # Use your chosen region
           entry_point: generateAndSendEmail
           project_id: ${{ secrets.GCP_PROJECT_ID }}
