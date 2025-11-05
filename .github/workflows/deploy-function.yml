@@ -38,7 +38,7 @@ jobs:
           trigger_http: true
           allow_unauthenticated: true
           env_vars: |
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
 
       # (Optional) Ping the function URL to verify
       - name: Smoke test
