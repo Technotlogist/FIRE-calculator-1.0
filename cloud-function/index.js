@@ -121,3 +121,4 @@ RETURN YOUR RESPONSE ONLY AS THE REQUESTED JSON OBJECT. DO NOT INCLUDE ANY OTHER
         res.status(500).send('Failed to generate plan or send email.');
     }
 };
+// Dummy commit to trigger deployment
