@@ -27,7 +27,7 @@ jobs:
 
       - name: 494683889335
         uses: 'google-github-actions/deploy-cloud-functions@v2'
-        with:
+   with:
           name: generateAndSendFirePlan
           runtime: nodejs20
           region: us-central1 # Use your chosen region
@@ -35,7 +35,5 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           source_dir: 'cloud-function' 
           trigger_http: true
-          allow_unauthenticated: true
-          env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           allow_unauthenticated: true
           env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
