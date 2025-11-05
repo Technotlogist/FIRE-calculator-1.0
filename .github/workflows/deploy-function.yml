@@ -20,25 +20,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Authenticate to Google Cloud
+      # Step 2: Authenticate to Google Cloud using Workload Identity Federation
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
+          # IMPORTANT: Replace [PROJECT_NUMBER] with your actual Google Cloud Project Number!
+          workload_identity_provider: projects/[PROJECT_NUMBER]/locations/global/workloadIdentityPools/github-pool/providers/github-actions
+          service_account: github-deployer@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com 
+          
       # Step 3: Deploy the Cloud Function
       - name: Deploy to Cloud Function
         uses: 'google-github-actions/deploy-cloud-functions@v2'
         with:
-          name: generateAndSendFirePlan
+          name: generateAndSendFirePlan # <-- CORRECTED NAME HERE
           runtime: nodejs20
-          region: us-central1 # <<-- IMPORTANT: Change this to your chosen GCP region!
+          region: us-central1 # Use your chosen region
           entry_point: generateAndSendEmail
-          project_id: ${{ secrets.GCP_PROJECT_ID }} # <<-- IMPORTANT: This uses your secret
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
           source_dir: 'cloud-function' 
           trigger_http: true
           allow_unauthenticated: true
-          env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} # <<-- This securely passes the key!
+          env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
       # Step 4: Output the Function URL
       - name: Get function URL
@@ -50,7 +52,6 @@ jobs:
           echo "FUNCTION_URL=$(cat function_url.txt)" >> $GITHUB_OUTPUT
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Display Function URL
         run: echo "Deployment Successful! Function URL is: ${{ steps.get_url.outputs.FUNCTION_URL }}"
