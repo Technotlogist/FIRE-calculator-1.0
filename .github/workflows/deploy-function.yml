@@ -32,7 +32,7 @@ jobs:
       - name: Deploy to Cloud Function
         uses: 'google-github-actions/deploy-cloud-functions@v2'
         with:
-          name: generateAndSendFirePlan # <-- CORRECTED NAME HERE
+          name: 494683889335
           runtime: nodejs20
           region: us-central1 # Use your chosen region
           entry_point: generateAndSendEmail
@@ -52,6 +52,3 @@ jobs:
           echo "FUNCTION_URL=$(cat function_url.txt)" >> $GITHUB_OUTPUT
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Display Function URL
-        run: echo "Deployment Successful! Function URL is: ${{ steps.get_url.outputs.FUNCTION_URL }}"
