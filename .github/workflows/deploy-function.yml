@@ -1,12 +1,11 @@
-# .github/workflows/deploy-function.yml
 name: Deploy Cloud Function (FIRE Plan Generator)
 
 on:
   push:
     branches:
-      - main  # Trigger deployment on push to the main branch
+      - main
     paths:
-      - 'cloud-function/**' # Only run if files in the function folder change
+      - 'cloud-function/**'
 
 jobs:
   deploy:
@@ -16,28 +15,25 @@ jobs:
       id-token: 'write'
 
     steps:
-      # Step 1: Checks out the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Authenticate to Google Cloud using Workload Identity Federation
-      - id: 'auth'
+      - name: Authenticate to Google Cloud
+        id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
-          # IMPORTANT: Replace [PROJECT_NUMBER] with your actual Google Cloud Project Number!
-          workload_identity_provider: projects/[PROJECT_NUMBER]/locations/global/workloadIdentityPools/github-pool/providers/github-actions
-          service_account: github-deployer@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com 
-          
-      # Step 3: Deploy the Cloud Function
+          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-actions
+          service_account: github-deployer@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
       - name: Deploy to Cloud Function
         uses: 'google-github-actions/deploy-cloud-functions@v2'
         with:
           name: generateAndSendFirePlan
           runtime: nodejs20
-          region: us-central1 # Use your chosen region
+          region: us-central1
           entry_point: generateAndSendEmail
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          source_dir: 'cloud-function' 
+          source_dir: 'cloud-function'
           trigger_http: true
           allow_unauthenticated: true
           env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
