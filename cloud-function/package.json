@@ -1,11 +1,13 @@
-// package.json
 {
-  "name": "fire-gemini-api-orchestrator",
+  "name": "fire-plan-generator",
   "version": "1.0.0",
-  "description": "Orchestrates Gemini and Salesforce API calls.",
+  "description": "Cloud function to generate a FIRE plan using an LLM and send an email.",
   "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "@google/genai": "^0.1.0",
-    "node-fetch": "^3.0.0"
+    "openai": "^6.0.0",
+    "node-fetch": "^3.3.2"
   }
 }
