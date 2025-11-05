@@ -1,5 +1,4 @@
 name: Deploy Cloud Function (FIRE Plan Generator)
-
 on:
   push:
     branches: [ main ]
@@ -12,15 +11,15 @@ jobs:
     permissions:
       contents: read
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
+      - name: 'Authenticate to Google Cloud'
         id: auth
         uses: google-github-actions/auth@v3
         with:
+          # Replace these placeholders with your actual secrets
           workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-actions
           service_account: github-deployer@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
           project_id: ${{ secrets.GCP_PROJECT_ID }}
