@@ -8,7 +8,7 @@ const SALESFORCE_API_URL = "YOUR_SALESFORCE_TRANSACTIONAL_EMAIL_ENDPOINT";
 // Initialize the Gemini AI client using the secure environment variable
 // The GEMINI_API_KEY will be passed securely via GitHub Actions secrets
 const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
-
+ 
 // Define the required JSON output schema
 const responseSchema = {
     type: Type.OBJECT,
