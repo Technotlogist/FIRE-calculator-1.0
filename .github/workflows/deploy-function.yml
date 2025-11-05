@@ -25,15 +25,17 @@ jobs:
           workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github-actions
           service_account: github-deployer@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
-      - name: Deploy to Cloud Function
+      - name: 494683889335
         uses: 'google-github-actions/deploy-cloud-functions@v2'
         with:
           name: generateAndSendFirePlan
           runtime: nodejs20
-          region: us-central1
+          region: us-central1 # Use your chosen region
           entry_point: generateAndSendEmail
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          source_dir: 'cloud-function'
+          source_dir: 'cloud-function' 
           trigger_http: true
+          allow_unauthenticated: true
+          env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           allow_unauthenticated: true
           env_vars: GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
