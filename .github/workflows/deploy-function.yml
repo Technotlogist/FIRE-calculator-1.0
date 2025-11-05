@@ -33,7 +33,7 @@ jobs:
         uses: 'google-github-actions/deploy-cloud-functions@v2'
         with:
           name: 494683889335
-          runtime: nodejs20
+          name: generateAndSendFirePlan
           region: us-central1 # Use your chosen region
           entry_point: generateAndSendEmail
           project_id: ${{ secrets.GCP_PROJECT_ID }}
