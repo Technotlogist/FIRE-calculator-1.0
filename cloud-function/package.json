@@ -1,14 +1,14 @@
 {
-  "name": "fire-plan-generator",
+  "name": "fire-plan-generator-worker",
   "version": "1.1.0",
-  "description": "Cloud function to generate FIRE insights via OpenAI Responses API.",
+  "description": "Cloudflare Worker to generate FIRE insights via OpenAI Responses API.",
   "main": "index.js",
-  "type": "commonjs",
-  "engines": { "node": ">=20" },
-  "scripts": {
-    "start": "node index.js"
-  },
+  "type": "module",
   "dependencies": {
     "openai": "^4.57.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240904.0",
+    "typescript": "^5.4.5"
   }
 }
