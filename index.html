@@ -713,27 +713,69 @@
             btn.textContent = 'Analyzing Plan...';
             outputDiv.innerHTML = '<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00A0F0] mr-2"></div>Loading Strategy...</div>';
 
-            const systemPrompt = "Act as a certified financial advisor specializing in accelerating FIRE timelines. Provide a concise, highly-actionable strategy (3-5 bullet points minimum) for the individual, focusing on maximizing the savings rate and optimizing investment returns based on current best practices. The response should be empathetic and highly motivational.";
-            const userQuery = `My current financial situation is: FIRE goal of $${futureGoal.toLocaleString()}, $${annualExpenses.toLocaleString()} annual expenses, and a ${currentSavingsRate}% savings rate. Provide a grounded strategy to accelerate reaching this goal and securing my future.`;
-            
-            const { text, sources } = await fetchGeminiData('gemini-2.5-flash-preview-05-20', systemPrompt, userQuery, true);
-            
-            outputDiv.innerHTML = `<div class="prose max-w-none text-sm text-slate-700">${text.replace(/\n/g, '<br>')}</div>`;
+            // --- NEW GPT/Vercel Logic ---
+const VERCEL_API_URL = "https://fire-calculator-1-0.vercel.app/api/index"; 
 
-            if (sources.length > 0) {
-                let sourceHtml = '<p class="mt-4 text-xs font-semibold text-slate-500">Sources:</p><ul class="list-disc list-inside text-xs text-slate-500 space-y-1">';
-                sources.slice(0, 3).forEach((src) => {
-                    sourceHtml += `<li><a href="${src.uri}" target="_blank" class="text-[#00A0F0] hover:underline">${src.title || src.uri}</a></li>`;
-                });
-                sourceHtml += '</ul>';
-                outputDiv.innerHTML += sourceHtml;
-            }
-            
-            btn.disabled = false;
-            btn.textContent = 'Get Grounded Strategy';
+async function generateAIInsight() {
+    const prompt = document.getElementById("aiPrompt").value.trim();
+    const structured = document.getElementById("aiStructured").checked;
+    const btn = document.getElementById("aiGenerateBtn");
+    const el = document.getElementById("aiResponse");
+    
+    if (!prompt) {
+        alert("Please enter a question or goal!");
+        return;
+    }
+    
+    // Pass current state from the global variables calculated in calculateAndRender()
+    const userContext = {
+        currentNetWorth,
+        annualIncome,
+        annualExpenses,
+        annualSavings,
+        savingsRate: savingsRate.toFixed(1) + '%',
+        fireGoal: futureGoal,
+        yearsToFire: isFinite(yearsToFire) ? yearsToFire.toFixed(2) : 'N/A'
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Generating Insight...";
+    el.textContent = "Generating personalized insight from GPT-4o-mini...";
+
+    try {
+        const r = await fetch(VERCEL_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, structured, user: userContext })
         });
+        
+        const data = await r.json();
+        
+        if (!data.ok) {
+             el.textContent = `Error: ${data.error || 'Failed to generate insight.'}`;
+        } else {
+             // Format the output nicely
+             if (data.structured) {
+                 el.textContent = JSON.stringify(data.result, null, 2);
+             } else {
+                 el.textContent = data.result;
+             }
+        }
 
-        document.getElementById('expenseBtn').addEventListener('click', async () => {
+    } catch (e) {
+        el.textContent = "Error: Could not connect to the Vercel Function.";
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Generate Insight";
+    }
+}
+
+document.getElementById("aiGenerateBtn")?.addEventListener("click", generateAIInsight);
+
+// --- Remove OLD Gemini Logic ---
+// The old Gemini-specific functions (fetchGeminiData, strategyBtn listener, expenseBtn listener)
+// and their dependencies should be removed from the script tag entirely.
             const btn = document.getElementById('expenseBtn');
             const outputDiv = document.getElementById('expenseOutput');
             
