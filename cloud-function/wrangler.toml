@@ -1,0 +1,7 @@
+name = "fire-plan-generator-worker"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+# LLM_MODEL is a variable you set in the Cloudflare Dashboard
+LLM_MODEL = "gpt-4o-mini"
