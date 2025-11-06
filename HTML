@@ -644,25 +644,80 @@
     });
 
     document.getElementById('expenseBtn').addEventListener('click', async () => {
-      const btn = document.getElementById('expenseBtn');
-      const outputDiv = document.getElementById('expenseOutput');
+     // --- Init --- 
+window.onload = function () {
+    restoreInputs();
+    initializeCharts();
+    const inputs = document.querySelectorAll('input[type="number"]');
+    const debounced = debounce(() => calculateAndRender(), 150);
+    inputs.forEach(input => input.addEventListener('input', debounced));
+    calculateAndRender();
 
-      btn.disabled = true;
-      btn.textContent = 'Brainstorming Ideas...';
-      outputDiv.innerHTML = '<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00F0B5] mr-2"></div>Loading Ideas...</div>';
+    document.getElementById('emailFunnelForm').addEventListener('submit', generateEmailPayload);
 
-      const systemPrompt = "You are a creative cost-cutting consultant. Generate exactly 5 unconventional and highly specific recommendations for reducing annual expenses, tailored to the user's specific expense level. Do not provide common advice like 'cancel subscriptions' or 'cook at home.' Focus on high-impact, actionable, and unique ideas. Present the ideas as a numbered list.";
-      const userQuery = `My current annual expenses are ${money(annualExpenses)}. Generate 5 unconventional ways to cut these costs.`;
+    // --- NEW GPT/Cloud Function Logic ---
+    const GCF_URL = "https://us-central1-YOUR_PROJECT.cloudfunctions.net/generateAndSendFirePlan"; 
 
-      const { text } = await fetchGeminiData('gemini-2.5-flash-preview-05-20', systemPrompt, userQuery, false);
-      outputDiv.innerHTML = `<div class="prose max-w-none text-sm text-slate-700">${text.replace(/\n/g, '<br>')}</div>`;
+    async function generateAIInsight() {
+        const prompt = document.getElementById("aiPrompt").value.trim();
+        const structured = document.getElementById("aiStructured").checked;
+        const btn = document.getElementById("aiGenerateBtn");
+        const el = document.getElementById("aiResponse");
+        
+        if (!prompt) {
+            alert("Please enter a question or goal!");
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.textContent = "Generating Insight...";
+        el.textContent = "Generating personalized insight from GPT-4o-mini...";
 
-      btn.disabled = false;
-      btn.textContent = 'Generate Optimization Ideas';
-    });
-  };
+        try {
+            // Note: window.__fireUser is not defined in this HTML, so we pass current global state.
+            const userContext = {
+                currentNetWorth,
+                annualIncome,
+                annualExpenses,
+                annualSavings,
+                savingsRate: savingsRate.toFixed(1) + '%',
+                fireGoal: futureGoal,
+                yearsToFire: isFinite(yearsToFire) ? yearsToFire.toFixed(2) : 'N/A'
+            };
 
-  // --- Funnel payload (kept; displays JSON) ---
+            const r = await fetch(GCF_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt, structured, user: userContext })
+            });
+
+            const data = await r.json();
+            
+            if (!data.ok) {
+                 el.textContent = `Error: ${data.error || 'Failed to generate insight.'}`;
+            } else {
+                 // Format the output nicely
+                 if (data.structured) {
+                     el.textContent = JSON.stringify(JSON.parse(data.result), null, 2);
+                 } else {
+                     el.textContent = data.result;
+                 }
+            }
+
+        } catch (e) {
+            el.textContent = "Error: Could not connect to the Cloud Function.";
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Generate Insight";
+        }
+    }
+
+    document.getElementById("aiGenerateBtn")?.addEventListener("click", generateAIInsight);
+    // --- End NEW GPT/Cloud Function Logic ---
+
+    // The rest of the original code (like generateEmailPayload) should remain.
+};  // --- Funnel payload (kept; displays JSON) ---
   function generateEmailPayload(event) {
     event.preventDefault();
 
