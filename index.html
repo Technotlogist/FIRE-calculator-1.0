@@ -585,33 +585,34 @@
             if (yearsToFire === Infinity) {
                 document.getElementById('yearsToFireDisplay').textContent = 'Never (Saving 0)';
             } else if (yearsToFire <= 0) {
-                 document.getElementById('yearsToFireDisplay').textContent = 'Achieved!';
-            }
-            else {
-                document.getElementById('yearsToFireDisplay').textContent = `${yearsToFire.toFixed(2)} Years`;
-            }
+  /**
+ * Checks for both presence and basic email format using Regex.
+ * @param {string} emailId - The ID of the email input field.
+ * @returns {boolean} True if validation fails, false if it passes.
+ */
+function validateEmailInput(emailId) {
+    const emailInput = document.getElementById(emailId);
+    const emailValue = emailInput.value.trim();
+    
+    // Simple regex: text@text.tld (Source 1.9)
+    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/; 
 
-            // 2. Update Savings Rate Chart
-            savingsRateChart.data.datasets[0].data = [savingsRate, Math.max(0, 100 - savingsRate)];
-            savingsRateChart.update();
+    // 1. Check for emptiness
+    if (emailValue === "") {
+        alert("Please enter your email address to get the full report!");
+        emailInput.focus(); 
+        return true; // Validation Fails
+    }
+    
+    // 2. Check for basic format
+    if (!emailPattern.test(emailValue)) {
+        alert("Please enter a valid email address (e.g., user@example.com).");
+        emailInput.focus();
+        return true; // Validation Fails
+    }
 
-            // 3. Update FIRE Scenarios Chart
-            const leanExp = 20000;
-            const standardExp = 30000;
-            const fatExp = 80000;
-
-            const leanGoal = leanExp * swrMult;
-            const standardGoal = standardExp * swrMult;
-            const fatGoal = fatExp * swrMult;
-
-            const leanYears = NPER(ratePercent, annualSavings, -nw, leanGoal);
-            const standardYears = NPER(ratePercent, annualSavings, -nw, standardGoal);
-            const fatYears = NPER(ratePercent, annualSavings, -nw, fatGoal);
-
-            fireScenariosChart.data.datasets[0].data = [
-                leanYears > 50 ? 50 : Math.max(0, leanYears), 
-                standardYears > 50 ? 50 : Math.max(0, standardYears), 
-                fatYears > 50 ? 50 : Math.max(0, fatYears)
+    return false; // Validation Passes
+}
             ];
             fireScenariosChart.data.labels = [
                 `Lean FIRE ($${leanExp.toLocaleString()}/yr)`, 
@@ -702,24 +703,24 @@
                 submitBtn.disabled = false;
             }, 3000);
         }
+// --- Funnel Payload Generation Logic ---
+function generateEmailPayload(event) {
+    event.preventDefault();
 
-// --- NEW GPT/Vercel Logic ---
-const VERCEL_API_URL = "https://fire-calculator-1-0.vercel.app/api/index"; 
-
-async function generateAIInsight() {
-    const prompt = document.getElementById("aiPrompt").value.trim();
-    const structured = document.getElementById("aiStructured").checked;
-    const btn = document.getElementById("aiGenerateBtn");
-    const el = document.getElementById("aiResponse");
-    
-    if (!prompt) {
-        alert("Please enter a question or goal!");
-        return;
+    // --- NEW VALIDATION INTEGRATION ---
+    // If validation fails (returns true), stop the function immediately.
+    if (validateEmailInput('userEmail')) { 
+        return; 
     }
-    
-    // Pass current state from the global variables calculated in calculateAndRender()
-    const userContext = {
-        currentNetWorth, annualIncome, annualExpenses, annualSavings, 
+    // ------------------------------------
+
+    const userEmail = document.getElementById('userEmail').value;
+    const personalPrompt = document.getElementById('personalPrompt').value;
+    const funnelOutputDiv = document.getElementById('funnelOutput');
+    const payloadDisplay = document.getElementById('payloadDisplay');
+
+    // 1. Construct the Gemini Queries...
+    // ... rest of the function continues as before ...
         savingsRate: savingsRate.toFixed(1) + '%', 
         fireGoal: futureGoal, 
         yearsToFire: isFinite(yearsToFire) ? yearsToFire.toFixed(2) : 'N/A'
