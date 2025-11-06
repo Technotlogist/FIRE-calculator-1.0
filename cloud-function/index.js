@@ -1,86 +1,84 @@
-// index.js (Google Cloud Function using OpenAI)
+// cloud-function/index.js
+// Runtime: Node.js 20 (GCF gen2). CJS for simplicity.
 
 const OpenAI = require("openai");
-const fetch = require('node-fetch');
 
-// Replace with your actual Salesforce API URL
-const SALESFORCE_API_URL = "YOUR_SALESFORCE_TRANSACTIONAL_EMAIL_ENDPOINT";
+// Simple CORS helper
+function setCors(res) {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+}
 
-// Initialize the OpenAI client using the securely passed environment variable
-// The client will automatically find process.env.OPENAI_API_KEY
-const openai = new OpenAI({});
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const MODEL = process.env.LLM_MODEL || "gpt-4o-mini";
 
-// Main entry point for the Cloud Function (must match the Entry Point in the deployment settings)
-exports.generateAndSendEmail = async (req, res) => {
-    // Set CORS headers
-    res.set('Access-Control-Allow-Origin', '*');
+// System prompt to anchor tone & scope
+const SYSTEM = `You are an expert FIRE (Financial Independence, Retire Early) planner.
+Be clear, data-driven, practical, and motivating. Tailor ideas to the user's inputs.`;
 
-    if (req.method === 'OPTIONS') {
-        res.set('Access-Control-Allow-Methods', 'POST');
-        res.set('Access-Control-Allow-Headers', 'Content-Type');
-        res.set('Access-Control-Max-Age', '3600');
-        return res.status(204).send('');
+// Optional: request structured JSON when caller sets { structured: true }
+const structuredSchema = {
+  name: "FIREInsight",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      summary: { type: "string" },
+      quickWins: { type: "array", items: { type: "string" } },
+      estimatedFIRENumber: { type: "number" },
+      targetDateRange: { type: "string" },
+      actionsNext30Days: { type: "array", items: { type: "string" } }
+    },
+    required: ["summary", "quickWins"]
+  }
+};
+
+exports.generateAndSendFirePlan = async (req, res) => {
+  setCors(res);
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).send("Only POST allowed");
+
+  try {
+    const { prompt, user } = req.body || {};
+    // `user` can include income, savingsRate, expenses, age, balance, etc.
+    if (!prompt || typeof prompt !== "string") {
+      return res.status(400).json({ error: "Missing 'prompt' (string)" });
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed. Must use POST.');
-    }
+    // Assemble a single input string for the Responses API.
+    const preface = `System:\n${SYSTEM}\n\nUser Context (optional JSON):\n${JSON.stringify(user || {}, null, 2)}\n\nUser Question:\n${prompt}`;
 
-    const userData = req.body;
+    const wantsStructured = Boolean(req.body?.structured);
 
-    if (!userData.email || !userData.netWorth || !userData.thoughts) {
-        return res.status(400).send('Missing required fields (email, netWorth, thoughts).');
-    }
+    const response = await client.responses.create({
+      model: MODEL,
+      input: preface,
+      temperature: 0.7,
+      // When structured JSON is requested, ask the model to emit valid JSON.
+      ...(wantsStructured
+        ? {
+            response_format: {
+              type: "json_schema",
+              json_schema: structuredSchema
+            },
+            max_output_tokens: 1200
+          }
+        : { max_output_tokens: 800 })
+    });
 
-    // 2. Construct the Prompts
-    const systemPrompt = `
-You are a highly professional, motivational, and expert Financial Independence (FIRE) coach. Your goal is to analyze the user's financial data and personal feelings to generate a personalized, actionable strategy email. The tone must be encouraging, positive, and authoritative. You MUST return your response as a single, valid JSON object that adheres strictly to the structure: {"subject": "string", "body_html": "string", "strategy_summary": "string"}. DO NOT INCLUDE ANY OTHER TEXT.
-`;
+    const result = response.output_text; // Convenience field for the Responses API
 
-    const userPrompt = `
-USER INPUT DATA:
-- Current Net Worth: $${userData.netWorth}
-- Annual Income: $${userData.income}
-- Annual Expenses: $${userData.expenses}
-- Savings Rate: ${userData.savingsRate}%
-- FIRE Goal: $${userData.fireGoal}
-- Years Until FIRE: ${userData.yearsToFire} Years
-
-USER'S THOUGHTS/GOAL: "${userData.thoughts}"
-
-TASK:
-1. Craft an email subject and an HTML email body (using <p>, <strong>, and <ul> tags).
-2. The email must start by directly referencing and validating the user's feeling about the timeline.
-3. Propose 3 distinct, actionable strategies to reduce the ${userData.yearsToFire} year timeline, focused on either expense reduction or income/investment optimization.
-4. Provide a single-sentence summary of the core strategy.
-`;
-
-    try {
-        // 3. Call the OpenAI API with JSON response format
-        const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini', // Fast and effective for structured output
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            response_format: { type: "json_object" }, // Forces JSON output
-        });
-
-        // The response content is a JSON string, so we parse it
-        const generatedContent = JSON.parse(response.choices[0].message.content);
-
-        // ... (Salesforce placeholder logic) ...
-        console.log(`Attempting to send email via Salesforce to: ${userData.email}`);
-
-        // 5. Respond to the website
-        res.status(200).send({
-            message: "Plan generated and email sent successfully!",
-            summary: generatedContent.strategy_summary
-        });
-
-    } catch (error) {
-        console.error("API Error:", error);
-        res.status(500).send('Failed to generate plan or send email.');
-    }
+    return res.status(200).json({
+      ok: true,
+      model: MODEL,
+      structured: wantsStructured,
+      result
+    });
+  } catch (err) {
+    console.error("AI Error:", err);
+    const status = err?.status || 500;
+    return res.status(status).json({ ok: false, error: "Failed to generate insight" });
+  }
 };
 // Dummy commit to trigger deployment
