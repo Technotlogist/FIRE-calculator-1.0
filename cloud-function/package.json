@@ -1,13 +1,14 @@
 {
   "name": "fire-plan-generator",
-  "version": "1.0.0",
-  "description": "Cloud function to generate a FIRE plan using an LLM and send an email.",
+  "version": "1.1.0",
+  "description": "Cloud function to generate FIRE insights via OpenAI Responses API.",
   "main": "index.js",
+  "type": "commonjs",
+  "engines": { "node": ">=20" },
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "openai": "^6.0.0",
-    "node-fetch": "^3.3.2"
+    "openai": "^4.57.0"
   }
 }
