@@ -703,17 +703,7 @@
             }, 3000);
         }
 
-        // --- Existing LLM Feature Logic (kept for on-page usage) ---
-        document.getElementById('strategyBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('strategyBtn');
-            const outputDiv = document.getElementById('strategyOutput');
-            const currentSavingsRate = savingsRate.toFixed(1);
-            
-            btn.disabled = true;
-            btn.textContent = 'Analyzing Plan...';
-            outputDiv.innerHTML = '<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00A0F0] mr-2"></div>Loading Strategy...</div>';
-
-            // --- NEW GPT/Vercel Logic ---
+// --- NEW GPT/Vercel Logic ---
 const VERCEL_API_URL = "https://fire-calculator-1-0.vercel.app/api/index"; 
 
 async function generateAIInsight() {
@@ -729,12 +719,9 @@ async function generateAIInsight() {
     
     // Pass current state from the global variables calculated in calculateAndRender()
     const userContext = {
-        currentNetWorth,
-        annualIncome,
-        annualExpenses,
-        annualSavings,
-        savingsRate: savingsRate.toFixed(1) + '%',
-        fireGoal: futureGoal,
+        currentNetWorth, annualIncome, annualExpenses, annualSavings, 
+        savingsRate: savingsRate.toFixed(1) + '%', 
+        fireGoal: futureGoal, 
         yearsToFire: isFinite(yearsToFire) ? yearsToFire.toFixed(2) : 'N/A'
     };
 
@@ -756,7 +743,8 @@ async function generateAIInsight() {
         } else {
              // Format the output nicely
              if (data.structured) {
-                 el.textContent = JSON.stringify(data.result, null, 2);
+                 // The backend sends the structured JSON as a string inside data.result, so we parse it here.
+                 el.textContent = JSON.stringify(JSON.parse(data.result), null, 2);
              } else {
                  el.textContent = data.result;
              }
@@ -772,28 +760,7 @@ async function generateAIInsight() {
 }
 
 document.getElementById("aiGenerateBtn")?.addEventListener("click", generateAIInsight);
+// --- End NEW GPT/Vercel Logic ---
 
-// --- Remove OLD Gemini Logic ---
-// The old Gemini-specific functions (fetchGeminiData, strategyBtn listener, expenseBtn listener)
-// and their dependencies should be removed from the script tag entirely.
-            const btn = document.getElementById('expenseBtn');
-            const outputDiv = document.getElementById('expenseOutput');
-            
-            btn.disabled = true;
-            btn.textContent = 'Brainstorming Ideas...';
-            outputDiv.innerHTML = '<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00F0B5] mr-2"></div>Loading Ideas...</div>';
-
-            const systemPrompt = "You are a creative cost-cutting consultant. Generate exactly 5 unconventional and highly specific recommendations for reducing annual expenses, tailored to the user's specific expense level. Do not provide common advice like 'cancel subscriptions' or 'cook at home.' Focus on high-impact, actionable, and unique ideas. Present the ideas as a numbered list.";
-            const userQuery = `My current annual expenses are $${annualExpenses.toLocaleString('en-US', { maximumFractionDigits: 0 })}. Generate 5 unconventional ways to cut these costs.`;
-            
-            const { text } = await fetchGeminiData('gemini-2.5-flash-preview-05-20', systemPrompt, userQuery, false);
-            
-            outputDiv.innerHTML = `<div class="prose max-w-none text-sm text-slate-700">${text.replace(/\n/g, '<br>')}</div>`;
-            
-            btn.disabled = false;
-            btn.textContent = 'Generate Optimization Ideas';
-        });
-
-    </script>
-</body>
-</html>
+// --- DELETE ALL OLD GEMINI BUTTON LISTENERS HERE ---
+// Note: The generateEmailPayload listener must remain inside the window.onload block!
