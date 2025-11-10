@@ -8,10 +8,7 @@
   <!-- Tailwind + Chart.js + Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet"/>
-
   <style>
     body { font-family: 'Inter', sans-serif; }
     .chart-container { position: relative; width: 100%; max-width: 640px; margin: 0 auto; height: 340px; }
@@ -19,6 +16,18 @@
     .gradient-text { background: linear-gradient(to right, #00A0F0, #00F0B5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .input-box { border: 2px solid #e2e8f0; padding: .5rem; text-align: center; font-size: 1.25rem; font-weight: 700; color: #334155; width: 100%; max-width: 260px; margin: 0 auto; }
     .input-label { font-size: .875rem; font-weight: 600; color: #64748b; margin-top: .25rem; }
+    .spinner {
+      border: 3px solid #fff;
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      width: 1rem;
+      height: 1rem;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: .5rem;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-700">
@@ -32,22 +41,6 @@
       </p>
     </header>
 
-    <!-- What is FIRE? -->
-    <section class="mb-10 bg-white p-6 md:p-8 rounded-xl shadow border border-slate-100">
-      <h2 class="text-2xl font-bold text-slate-800">New here? What is FIRE?</h2>
-      <p class="mt-3 text-slate-600">
-        <strong>FIRE</strong> stands for <em>Financial Independence, Retire Early</em>. The core idea: build an investment portfolio large enough that a small, sustainable withdrawal can fund your lifestyle indefinitely.
-      </p>
-      <ul class="mt-4 space-y-2 text-slate-600 list-disc list-inside">
-        <li><strong>Savings Rate:</strong> The % of your take-home income you keep (income − expenses). This is the biggest lever—higher savings rates shorten your timeline dramatically.</li>
-        <li><strong>Safe Withdrawal Rate (SWR):</strong> Many people use ~4% as a planning rule of thumb. Your <em>FIRE number</em> ≈ annual expenses × (1 / SWR). A common shortcut is the <em>“25× rule”</em> (i.e., 4% SWR).</li>
-        <li><strong>Real Returns:</strong> We model growth after inflation using a <em>real annual return</em> (e.g., 5%).</li>
-      </ul>
-      <p class="mt-3 text-slate-600">
-        Enter your info below. We’ll calculate your FIRE number, estimated years to reach it, and show interactive charts that update as you type.
-      </p>
-    </section>
-
     <!-- Inputs -->
     <section class="mb-12 bg-white p-6 md:p-8 rounded-xl shadow-lg border border-slate-100">
       <div class="text-center mb-8">
@@ -60,310 +53,4 @@
           <input type="number" id="currentNwInput" value="100000" min="0" class="input-box bg-slate-50" />
           <div class="input-label">Current Net Worth ($)</div>
         </div>
-        <div class="p-4 rounded-xl border border-slate-100">
-          <input type="number" id="annualIncInput" value="80000" min="0" class="input-box bg-slate-50" />
-          <div class="input-label">Annual Income (Net $)</div>
-        </div>
-        <div class="p-4 rounded-xl border border-slate-100">
-          <input type="number" id="annualExpInput" value="30000" min="0" class="input-box bg-slate-50" />
-          <div class="input-label">Annual Expenses ($)</div>
-        </div>
-        <div class="p-4 rounded-xl border border-slate-100">
-          <input type="number" id="realReturnInput" value="5" min="0" max="15" step="0.1" class="input-box bg-slate-50" />
-          <div class="input-label">Real Annual Return (%)</div>
-        </div>
-        <div class="p-4 rounded-xl border border-slate-100">
-          <input type="number" id="swrMultiplierInput" value="25" min="20" max="33.3" step="0.5" class="input-box bg-slate-50" />
-          <div class="input-label">SWR Multiplier (×)</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Results -->
-    <section class="mb-12">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-        <div class="bg-white p-6 rounded-xl shadow border border-slate-100">
-          <div class="text-4xl font-extrabold text-[#00A0F0]" id="annualSavingsDisplay">$50,000</div>
-          <div class="text-sm font-semibold text-slate-500 mt-1">Annual Savings</div>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow border border-slate-100">
-          <div class="text-4xl font-extrabold text-[#00A0F0]" id="savingsRateDisplay">62.5%</div>
-          <div class="text-sm font-semibold text-slate-500 mt-1">Savings Rate</div>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow border border-slate-100">
-          <div class="text-4xl font-extrabold text-[#00F0B5]" id="fireGoalDisplay">$750,000</div>
-          <div class="text-sm font-semibold text-slate-500 mt-1">Your FIRE Goal</div>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow border border-[#00A0F0]">
-          <div class="text-4xl font-extrabold text-slate-800" id="yearsToFireDisplay">9.87 Years</div>
-          <div class="text-sm font-semibold text-slate-500 mt-1">Years Until FIRE</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Charts -->
-    <section class="mb-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div class="bg-white p-6 md:p-8 rounded-xl shadow border border-slate-100">
-          <h3 class="text-2xl font-bold text-slate-800">The Engine of FIRE: Your Savings Rate</h3>
-          <p class="mt-2 text-slate-600">
-            A higher savings rate shortens your timeline. The doughnut shows income split between savings and expenses.
-          </p>
-          <div class="mt-4 text-center">
-            <p class="text-5xl font-extrabold text-[#00A0F0]" id="savingsRateDisplay2">62.5%</p>
-            <p class="font-semibold text-slate-500">Savings Rate</p>
-          </div>
-        </div>
-        <div class="bg-white p-6 md:p-8 rounded-xl shadow border border-slate-100">
-          <div class="chart-container">
-            <canvas id="savingsRateChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="mb-12 bg-white p-6 md:p-8 rounded-xl shadow border border-slate-100">
-      <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold text-slate-800">The Impact of Lifestyle: FIRE Scenarios</h2>
-        <p class="mt-2 text-slate-500">Compare Lean, Standard, and Fat FIRE timelines based on your inputs.</p>
-      </div>
-      <div class="chart-container">
-        <canvas id="fireScenariosChart"></canvas>
-      </div>
-    </section>
-
-    <section class="mb-2 bg-white p-6 md:p-8 rounded-xl shadow border border-slate-100">
-      <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold text-slate-800">Visualizing Your Growth</h2>
-        <p class="mt-2 text-slate-500">Projected net worth over time until you reach your FIRE number.</p>
-      </div>
-      <div class="chart-container">
-        <canvas id="growthChart"></canvas>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="text-center p-8 mt-12 border-t border-slate-200">
-    <p class="text-slate-500">Start your journey to Financial Independence today—small changes compound into big results.</p>
-  </footer>
-
-  <!-- ================== SCRIPT ================== -->
-  <script>
-    // Chart.js defaults
-    Chart.defaults.color = '#334155';
-    Chart.defaults.font.family = "'Inter','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Helvetica Neue','Arial'";
-
-    // Globals/state
-    let savingsRateChart, fireScenariosChart, growthChart;
-
-    const money = (n, maxFrac = 0) =>
-      n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: maxFrac });
-
-    const debounce = (fn, wait = 160) => {
-      let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
-    };
-
-    function saveInputs() {
-      const ids = ['currentNwInput','annualIncInput','annualExpInput','realReturnInput','swrMultiplierInput'];
-      const data = Object.fromEntries(ids.map(id => [id, document.getElementById(id)?.value]));
-      localStorage.setItem('fire_inputs', JSON.stringify(data));
-    }
-
-    function restoreInputs() {
-      try {
-        const raw = localStorage.getItem('fire_inputs'); if (!raw) return;
-        const data = JSON.parse(raw);
-        Object.entries(data).forEach(([id, val]) => {
-          const el = document.getElementById(id);
-          if (el && !isNaN(+val)) el.value = val;
-        });
-      } catch {}
-    }
-
-    // Finance math
-    // Solve for n in: PV*(1+r)^n + PMT*((1+r)^n - 1)/r = FV   (annual r)
-    function yearsToTarget(ratePercent, pmtAnnual, pv, fv) {
-      const r = ratePercent / 100;
-      if (pv >= fv) return 0;
-      if (pmtAnnual <= 0 && r <= 0) return Infinity;
-      if (r === 0) return (fv - pv) / (pmtAnnual <= 0 ? 1e-9 : pmtAnnual);
-
-      const num = fv * r + pmtAnnual;
-      const den = pv * r + pmtAnnual;
-      if (num <= 0 || den <= 0) return Infinity;
-      const n = Math.log(num / den) / Math.log(1 + r);
-      return n < 0 ? 0 : n;
-    }
-
-    // Monthly simulation for the growth curve (returns [{x:years, y:value}, ...])
-    function simulateGrowthMonthly(pv, pmtAnnual, ratePercent, years, capFV) {
-      const stepsPerYear = 12;
-      const totalSteps = Math.max(1, Math.round(years * stepsPerYear));
-      const rm = Math.pow(1 + ratePercent / 100, 1 / stepsPerYear) - 1;
-      const pmtMonthly = pmtAnnual / stepsPerYear;
-
-      let v = pv, contributed = 0;
-      const total = [{ x: 0, y: pv }];
-      const contrib = [{ x: 0, y: pv }];
-
-      for (let i = 1; i <= totalSteps; i++) {
-        v = v * (1 + rm) + pmtMonthly;
-        contributed += pmtMonthly;
-
-        if (i % stepsPerYear === 0 || i === totalSteps) {
-          const year = +(i / stepsPerYear).toFixed(2);
-          total.push({ x: year, y: v });
-          contrib.push({ x: year, y: pv + contributed });
-        }
-        if (capFV && v >= capFV) {
-          const year = +(i / stepsPerYear).toFixed(2);
-          total.push({ x: year, y: capFV });
-          contrib.push({ x: year, y: pv + contributed });
-          break;
-        }
-      }
-      return { total, contrib };
-    }
-
-    // Initialize the three charts
-    function initializeCharts() {
-      // Doughnut: Savings vs Expenses
-      savingsRateChart = new Chart(document.getElementById('savingsRateChart'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Savings','Expenses'],
-          datasets: [{ data: [62.5, 37.5], backgroundColor: ['#00A0F0','#00F0B5'], borderColor: ['#ffffff'], borderWidth: 4, hoverOffset: 8 }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false, cutout: '70%',
-          plugins: {
-            legend: { position: 'bottom', labels: { padding: 18, font: { weight: '600' } } },
-            tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed.toFixed(1)}%` } }
-          }
-        }
-      });
-
-      // Bar: Scenario years
-      fireScenariosChart = new Chart(document.getElementById('fireScenariosChart'), {
-        type: 'bar',
-        data: {
-          labels: ['Lean FIRE ($20k/yr)', 'Standard FIRE ($30k/yr)', 'Fat FIRE ($80k/yr)'],
-          datasets: [{ label: 'Years to FIRE', data: [7.28, 9.87, 21.41], backgroundColor: ['#00F0B5','#00A0F0','#F0A000'], borderRadius: 6 }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-          scales: {
-            x: { beginAtZero: true, grid: { color: '#e2e8f0' }, title: { display: true, text: 'Years' } },
-            y: { grid: { display: false } }
-          },
-          plugins: { legend: { display: false } }
-        }
-      });
-
-      // Line: Growth over time (Total vs Contributions)
-      growthChart = new Chart(document.getElementById('growthChart'), {
-        type: 'line',
-        data: {
-          datasets: [
-            { label: 'Total Net Worth', data: [{ x: 0, y: 100000 }, { x: 9.87, y: 750000 }], borderColor: '#00A0F0', backgroundColor: 'rgba(0,160,240,.12)', fill: true, tension: .25, pointRadius: 0 },
-            { label: 'Contributions (Principal+Deposits)', data: [{ x: 0, y: 100000 }, { x: 9.87, y: 650000 }], borderColor: '#00F0B5', borderDash: [6,6], fill: false, tension: .25, pointRadius: 0 }
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            x: { type: 'linear', title: { display: true, text: 'Years from Today' }, grid: { display: false } },
-            y: {
-              beginAtZero: true, title: { display: true, text: 'Net Worth ($)' },
-              ticks: { callback: (v) => '$' + (v/1000) + 'k' }, grid: { color: '#e2e8f0' }
-            }
-          },
-          plugins: {
-            legend: { position: 'bottom' },
-            tooltip: {
-              callbacks: {
-                title: (items) => `Year ${items[0].parsed.x?.toFixed(2)}`,
-                label: (ctx) => `${ctx.dataset.label}: ${money(ctx.parsed.y)}`
-              }
-            }
-          }
-        }
-      });
-    }
-
-    // Recalculate + render updates across all UI
-    function calculateAndRender() {
-      const nw   = Math.max(0, parseFloat(document.getElementById('currentNwInput').value) || 0);
-      const inc  = Math.max(0, parseFloat(document.getElementById('annualIncInput').value) || 0);
-      const exp  = Math.max(0, parseFloat(document.getElementById('annualExpInput').value) || 0);
-      const rPct = Math.max(0, parseFloat(document.getElementById('realReturnInput').value) || 0);
-      const mult = Math.max(1, parseFloat(document.getElementById('swrMultiplierInput').value) || 25);
-
-      const annualSavings   = Math.max(0, inc - exp);
-      const savingsRate     = inc > 0 ? (annualSavings / inc) * 100 : 0;
-      const fireGoal        = exp * mult;
-      const yToFire         = (annualSavings === 0 && nw < fireGoal) ? Infinity :
-                              (nw >= fireGoal) ? 0 : yearsToTarget(rPct, annualSavings, nw, fireGoal);
-
-      // Cards
-      document.getElementById('annualSavingsDisplay').textContent = money(annualSavings);
-      document.getElementById('savingsRateDisplay').textContent = `${savingsRate.toFixed(1)}%`;
-      document.getElementById('savingsRateDisplay2').textContent = `${savingsRate.toFixed(1)}%`;
-      document.getElementById('fireGoalDisplay').textContent = money(fireGoal);
-
-      const yearsEl = document.getElementById('yearsToFireDisplay');
-      if (!isFinite(yToFire) || yToFire > 200) yearsEl.textContent = 'Not achievable with current inputs';
-      else if (yToFire <= 0) yearsEl.textContent = 'Achieved!';
-      else yearsEl.textContent = `${yToFire.toFixed(2)} Years`;
-
-      // Doughnut
-      savingsRateChart.data.datasets[0].data = [Math.min(100, savingsRate), Math.max(0, 100 - savingsRate)];
-      savingsRateChart.update();
-
-      // Scenarios (Lean, Standard, Fat)
-      const [leanExp, standardExp, fatExp] = [20000, 30000, 80000];
-      const goals = [leanExp, standardExp, fatExp].map(x => x * mult);
-      const yrs   = goals.map(goal => yearsToTarget(rPct, annualSavings, nw, goal));
-      fireScenariosChart.data.labels = [
-        `Lean FIRE ($${leanExp.toLocaleString()}/yr)`,
-        `Standard FIRE ($${standardExp.toLocaleString()}/yr)`,
-        `Fat FIRE ($${fatExp.toLocaleString()}/yr)`
-      ];
-      fireScenariosChart.data.datasets[0].data = yrs.map(y => (!isFinite(y) || y < 0) ? 0 : Math.min(50, y));
-      fireScenariosChart.options.scales.x.max = Math.max(10, Math.ceil((Math.max(...yrs.filter(isFinite)) || 10) / 10) * 10);
-      fireScenariosChart.update();
-
-      // Growth (Total vs Contributions)
-      if (isFinite(yToFire) && yToFire > 0) {
-        const { total, contrib } = simulateGrowthMonthly(nw, annualSavings, rPct, Math.min(yToFire, 100), fireGoal);
-        growthChart.data.datasets[0].data = total;
-        growthChart.data.datasets[1].data = contrib;
-        growthChart.options.scales.x.max = Math.ceil(Math.min(yToFire, 100));
-        const maxY = Math.max(fireGoal * 1.05, nw * 1.2);
-        growthChart.options.scales.y.max = maxY;
-      } else {
-        growthChart.data.datasets[0].data = [{ x: 0, y: nw }, { x: 1, y: nw }];
-        growthChart.data.datasets[1].data = [{ x: 0, y: nw }, { x: 1, y: nw }];
-        growthChart.options.scales.x.max = 1;
-        growthChart.options.scales.y.max = nw * 1.2 + 1;
-      }
-      growthChart.update();
-
-      saveInputs();
-    }
-
-    // Init
-    window.addEventListener('load', () => {
-      restoreInputs();
-      initializeCharts();
-      const debounced = debounce(calculateAndRender, 120);
-      document.querySelectorAll('input[type="number"]').forEach(el => {
-        el.addEventListener('input', debounced);
-        el.addEventListener('change', debounced);
-      });
-      calculateAndRender();
-    });
-  </script>
-</body>
-</html>
+        <div class="p-4 rounded-xl border border-slate-1
