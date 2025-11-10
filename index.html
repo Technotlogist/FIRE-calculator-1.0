@@ -53,4 +53,185 @@
           <input type="number" id="currentNwInput" value="100000" min="0" class="input-box bg-slate-50" />
           <div class="input-label">Current Net Worth ($)</div>
         </div>
-        <div class="p-4 rounded-xl border border-slate-1
+        <div class="p-4 rounded-xl border border-slate-100">
+          <input type="number" id="annualIncInput" value="80000" min="0" class="input-box bg-slate-50" />
+          <div class="input-label">Annual Income (Net $)</div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-100">
+          <input type="number" id="annualExpInput" value="30000" min="0" class="input-box bg-slate-50" />
+          <div class="input-label">Annual Expenses ($)</div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-100">
+          <input type="number" id="realReturnInput" value="5" min="0" max="15" step="0.1" class="input-box bg-slate-50" />
+          <div class="input-label">Real Annual Return (%)</div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-100">
+          <input type="number" id="swrMultiplierInput" value="25" min="20" max="33.3" step="0.5" class="input-box bg-slate-50" />
+          <div class="input-label">SWR Multiplier (×)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="mb-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="bg-white p-6 rounded-xl shadow border border-slate-100">
+        <h3 class="text-2xl font-bold text-slate-800 mb-2">Savings Rate</h3>
+        <div class="chart-container"><canvas id="savingsRateChart"></canvas></div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow border border-slate-100">
+        <h3 class="text-2xl font-bold text-slate-800 mb-2">FIRE Scenarios</h3>
+        <div class="chart-container"><canvas id="fireScenariosChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="mb-12 bg-white p-6 rounded-xl shadow border border-slate-100">
+      <h3 class="text-2xl font-bold text-slate-800 mb-2 text-center">Wealth Growth Over Time</h3>
+      <div class="chart-container"><canvas id="growthChart"></canvas></div>
+    </section>
+
+    <!-- Email and Generate Button -->
+    <section class="mb-16 bg-white p-6 md:p-8 rounded-xl shadow border border-slate-100 text-center">
+      <h2 class="text-2xl font-bold text-slate-800 mb-4">Get Your Personalized FIRE Plan</h2>
+      <input type="email" id="emailInput" placeholder="you@example.com"
+        class="input-box bg-slate-50 w-full sm:w-96 mb-4" />
+      <br />
+      <button id="sendPlanBtn"
+        class="px-6 py-3 rounded-2xl font-semibold shadow bg-[#00A0F0] text-white hover:opacity-90 inline-flex items-center justify-center disabled:opacity-60">
+        <span id="spinner" class="spinner hidden"></span>
+        <span id="btnText">Generate My Plan & Email Me</span>
+      </button>
+      <p id="sendStatus" class="mt-4 text-sm text-slate-500"></p>
+    </section>
+
+  </main>
+
+  <footer class="text-center p-8 mt-12 border-t border-slate-200">
+    <p class="text-slate-500">Start your journey to Financial Independence today—small changes compound into big results.</p>
+  </footer>
+
+  <!-- ================= SCRIPT ================= -->
+  <script>
+    Chart.defaults.color = '#334155';
+    Chart.defaults.font.family = "'Inter','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Helvetica Neue','Arial'";
+
+    let savingsRateChart, fireScenariosChart, growthChart;
+
+    const money = (n, maxFrac = 0) =>
+      n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: maxFrac });
+    const debounce = (fn, wait = 160) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; };
+
+    function yearsToTarget(ratePercent, pmtAnnual, pv, fv) {
+      const r = ratePercent / 100;
+      if (pv >= fv) return 0;
+      if (pmtAnnual <= 0 && r <= 0) return Infinity;
+      if (r === 0) return (fv - pv) / (pmtAnnual <= 0 ? 1e-9 : pmtAnnual);
+      const num = fv * r + pmtAnnual, den = pv * r + pmtAnnual;
+      if (num <= 0 || den <= 0) return Infinity;
+      const n = Math.log(num / den) / Math.log(1 + r);
+      return n < 0 ? 0 : n;
+    }
+
+    function simulateGrowthMonthly(pv, pmtAnnual, ratePercent, years, capFV) {
+      const stepsPerYear = 12, totalSteps = Math.max(1, Math.round(years * stepsPerYear));
+      const rm = Math.pow(1 + ratePercent / 100, 1 / stepsPerYear) - 1;
+      const pmtMonthly = pmtAnnual / stepsPerYear;
+      let v = pv, contributed = 0;
+      const total = [{ x: 0, y: pv }], contrib = [{ x: 0, y: pv }];
+      for (let i = 1; i <= totalSteps; i++) {
+        v = v * (1 + rm) + pmtMonthly; contributed += pmtMonthly;
+        if (i % stepsPerYear === 0 || i === totalSteps) {
+          const year = +(i / stepsPerYear).toFixed(2);
+          total.push({ x: year, y: v }); contrib.push({ x: year, y: pv + contributed });
+        }
+        if (capFV && v >= capFV) break;
+      }
+      return { total, contrib };
+    }
+
+    function initializeCharts() {
+      savingsRateChart = new Chart(document.getElementById('savingsRateChart'), {
+        type: 'doughnut',
+        data: { labels: ['Savings', 'Expenses'], datasets: [{ data: [62.5, 37.5], backgroundColor: ['#00A0F0', '#00F0B5'], borderColor: ['#fff'], borderWidth: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+      });
+
+      fireScenariosChart = new Chart(document.getElementById('fireScenariosChart'), {
+        type: 'bar',
+        data: { labels: ['Lean', 'Standard', 'Fat'], datasets: [{ data: [7.2, 9.8, 21.4], backgroundColor: ['#00F0B5', '#00A0F0', '#F0A000'], borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+      });
+
+      growthChart = new Chart(document.getElementById('growthChart'), {
+        type: 'line',
+        data: { datasets: [{ label: 'Total Net Worth', data: [{ x: 0, y: 100000 }, { x: 9.87, y: 750000 }], borderColor: '#00A0F0', backgroundColor: 'rgba(0,160,240,.12)', fill: true, tension: .25, pointRadius: 0 }, { label: 'Contributions', data: [{ x: 0, y: 100000 }, { x: 9.87, y: 650000 }], borderColor: '#00F0B5', borderDash: [6, 6], fill: false, tension: .25, pointRadius: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { type: 'linear', title: { display: true, text: 'Years' } }, y: { title: { display: true, text: 'Net Worth ($)' } } } }
+      });
+    }
+
+    function calculateAndRender() {
+      const nw = +document.getElementById('currentNwInput').value || 0;
+      const inc = +document.getElementById('annualIncInput').value || 0;
+      const exp = +document.getElementById('annualExpInput').value || 0;
+      const rPct = +document.getElementById('realReturnInput').value || 0;
+      const mult = +document.getElementById('swrMultiplierInput').value || 25;
+
+      const annualSavings = inc - exp;
+      const savingsRate = inc > 0 ? (annualSavings / inc) * 100 : 0;
+      const fireGoal = exp * mult;
+      const yToFire = yearsToTarget(rPct, annualSavings, nw, fireGoal);
+
+      savingsRateChart.data.datasets[0].data = [savingsRate, 100 - savingsRate];
+      savingsRateChart.update();
+
+      const [leanExp, stdExp, fatExp] = [20000, 30000, 80000];
+      const goals = [leanExp, stdExp, fatExp].map(x => x * mult);
+      const yrs = goals.map(goal => yearsToTarget(rPct, annualSavings, nw, goal));
+      fireScenariosChart.data.datasets[0].data = yrs;
+      fireScenariosChart.update();
+
+      const { total, contrib } = simulateGrowthMonthly(nw, annualSavings, rPct, Math.min(yToFire, 50), fireGoal);
+      growthChart.data.datasets[0].data = total;
+      growthChart.data.datasets[1].data = contrib;
+      growthChart.update();
+    }
+
+    window.addEventListener('load', () => {
+      initializeCharts();
+      const debounced = debounce(calculateAndRender, 120);
+      document.querySelectorAll('input[type="number"]').forEach(el => {
+        el.addEventListener('input', debounced);
+        el.addEventListener('change', debounced);
+      });
+      calculateAndRender();
+    });
+
+    // === Email Plan Sender ===
+    document.getElementById('sendPlanBtn').addEventListener('click', async () => {
+      const email = document.getElementById('emailInput').value.trim();
+      const spinner = document.getElementById('spinner');
+      const text = document.getElementById('btnText');
+      const status = document.getElementById('sendStatus');
+      if (!email) { status.textContent = "Please enter your email."; return; }
+
+      spinner.classList.remove('hidden'); text.textContent = "Generating..."; status.textContent = "";
+      document.getElementById('sendPlanBtn').disabled = true;
+
+      try {
+        const res = await fetch("https://fire-calculator-1-0.vercel.app/api/generateAndSendFirePlan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        status.textContent = "✅ Plan sent! Check your inbox.";
+      } catch (e) {
+        console.error(e); status.textContent = "❌ Error sending plan. Try again.";
+      } finally {
+        spinner.classList.add('hidden');
+        text.textContent = "Generate My Plan & Email Me";
+        document.getElementById('sendPlanBtn').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
